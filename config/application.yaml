@@ -170,7 +170,9 @@ secretpad:
   center-platform-service: secretpad.master.svc
   gateway: ${KUSCIA_GW_ADDRESS:127.0.0.1:80}
   auth:
-    enabled: true
+    # Demo deployments are unauthenticated by default. Set
+    # SECRETPAD_AUTH_ENABLED=true for an authenticated deployment.
+    enabled: ${SECRETPAD_AUTH_ENABLED:false}
     pad_name: ${SECRETPAD_USER_NAME}
     pad_pwd: ${SECRETPAD_PASSWORD}
   response:

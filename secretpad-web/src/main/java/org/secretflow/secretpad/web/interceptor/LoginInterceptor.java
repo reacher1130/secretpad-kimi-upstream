@@ -26,6 +26,8 @@ import org.secretflow.secretpad.common.exception.SecretpadException;
 import org.secretflow.secretpad.common.util.UserContext;
 import org.secretflow.secretpad.persistence.entity.ProjectNodeDO;
 import org.secretflow.secretpad.persistence.entity.TokensDO;
+import org.secretflow.secretpad.persistence.entity.NodeDO;
+import org.secretflow.secretpad.persistence.repository.NodeRepository;
 import org.secretflow.secretpad.persistence.repository.ProjectNodeRepository;
 import org.secretflow.secretpad.persistence.repository.UserTokensRepository;
 import org.secretflow.secretpad.service.EnvService;
@@ -88,6 +90,9 @@ public class LoginInterceptor implements HandlerInterceptor {
     @Resource
     private InnerPortPathConfig innerPortPathConfig;
 
+    @Resource
+    private NodeRepository nodeRepository;
+
     @Autowired
     public LoginInterceptor(UserTokensRepository userTokensRepository, EnvService envService,
                             SysResourcesBizService sysResourcesBizService, ProjectNodeRepository projectNodeRepository) {
@@ -113,8 +118,22 @@ public class LoginInterceptor implements HandlerInterceptor {
         }
         UserContextDTO userContextDTO = new UserContextDTO();
         userContextDTO.setName("admin");
-        userContextDTO.setOwnerId("nodeId");
-        userContextDTO.setOwnerType(UserOwnerTypeEnum.EDGE);
+        // In local unauthenticated P2P demos, use the local node's institution
+        // as ownerId so node-scoped data resources pass the same checks as an
+        // authenticated P2P user. The old literal "nodeId" made every upload
+        // and datatable registration on the native Kimi page fail.
+        String localNodeId = envService.getPlatformNodeId();
+        String instId = localNodeId;
+        try {
+            NodeDO node = nodeRepository.findByNodeId(localNodeId);
+            if (node != null && StringUtils.isNotBlank(node.getInstId())) {
+                instId = node.getInstId();
+            }
+        } catch (Exception ignored) {
+            // Keep the local node fallback for partially bootstrapped demos.
+        }
+        userContextDTO.setOwnerId(instId);
+        userContextDTO.setOwnerType(UserOwnerTypeEnum.P2P);
         userContextDTO.setToken("token");
         userContextDTO.setPlatformType(platformType);
         userContextDTO.setPlatformNodeId(envService.getPlatformNodeId());
