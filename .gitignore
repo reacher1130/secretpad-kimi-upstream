@@ -39,7 +39,7 @@ secretpad-web/config
 ### VS Code ###
 .vscode/
 tmp/
-log/
+/log/
 config/certs
 config/server.jks
 build/**/id_rsa*
